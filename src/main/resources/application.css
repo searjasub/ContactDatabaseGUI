@@ -1,0 +1,44 @@
+.button {
+    -fx-font-size: 14pt;
+}
+
+.tool-bar.button {
+    -fx-font-size: 14px;
+}
+
+.label {
+
+}
+
+.vbox-center {
+    -fx-spacing: 5px;
+    -fx-padding: 10, 0, 0, 10;
+}
+
+.pagination > .pagination-control > .control-box > .number-button:selected,
+.pagination > .pagination-control > .control-box > .bullet-button:selected{
+    -fx-background-color: rgb(33, 150, 243);
+    -fx-text-fill: white;
+    -fx-background-radius:15px;
+    -fx-padding: 0px;
+}
+
+.pagination > .pagination-control > .control-box > .number-button,
+.pagination > .pagination-control > .control-box > .left-arrow-button,
+.pagination > .pagination-control > .control-box > .right-arrow-button{
+    -fx-base: rgb(33, 150, 243);
+    -fx-background-radius:15px;
+    -fx-padding: 0px;
+}
+
+.add-button {
+    -fx-pref-width: 50px;
+    -fx-pref-height: 35px;
+    -fx-font-size: 10pt;
+}
+
+.delete-button {
+    -fx-pref-width: 120px;
+    -fx-pref-height: 35px;
+    -fx-font-size: 10pt;
+}
