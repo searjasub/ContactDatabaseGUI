@@ -2,11 +2,10 @@ package contactdatabasegui;
 
 import java.io.*;
 
-public class RandomAccessEngine <T extends RandomAccessEntity> implements DatabaseManager {
+public class RandomAccessEngine implements DatabaseManager {
 
     private RandomAccessFile file;
     private RandomAccessFile database;
-    private RandomAccessEntityFactory<T> factory;
     private int nextId;
     private int size;
 
@@ -77,7 +76,7 @@ public class RandomAccessEngine <T extends RandomAccessEntity> implements Databa
 
 
     @Override
-    public void create(T entity) throws IOException {
+    public void create(Contact entity) throws IOException {
         byte[] serializedEntity = entity.serialize();
         int newId = nextId;
         long offset = calculateOffset(newId, serializedEntity.length);
@@ -92,19 +91,19 @@ public class RandomAccessEngine <T extends RandomAccessEntity> implements Databa
     }
 
     @Override
-    public T read(int id) throws IOException {
+    public Contact read(int id) throws IOException {
         long offset = calculateOffset(id, FieldSizes.getTotalLength());
         database.seek(offset);
         byte[] buffer = new byte[FieldSizes.getTotalLength()];
         database.read(buffer);
-        T entity = new Contact();
+        Contact entity = new Contact();
         entity.deserialize(buffer);
         database.read();
         return entity;
     }
 
     @Override
-    public void update(T entity, int id) throws IOException {
+    public void update(Contact entity, int id) throws IOException {
         byte[] serializedPerson = entity.serialize();
         long offset = calculateOffset(id, serializedPerson.length);
         file.seek((offset));

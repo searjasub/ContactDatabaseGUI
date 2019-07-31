@@ -5,7 +5,7 @@ import javafx.beans.property.StringProperty;
 
 import java.util.Objects;
 
-public class Contact {
+public class Contact{
 
     private StringProperty firstName;
     private StringProperty lastName;
