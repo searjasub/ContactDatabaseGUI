@@ -1,7 +1,6 @@
 package contactdatabasegui;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,11 +8,17 @@ import java.util.List;
 public class SQLEngine implements Closeable, DatabaseManager {
 
     private Connection connection;
+    private int nextId;
+    private int size;
 
     public SQLEngine() {
+
         try {
+//            Class.forName("com.mysql.jdbc.Driver");
             connection = DriverManager.getConnection("jdbc:sqlserver://localhost;databaseName=ContactDatabaseGUI",
                     "ContactDatabaseGUI", "ContactDatabaseGUI");
+            size = loadSize();
+            nextId = getNextId();
         } catch (SQLException e) {
             e.printStackTrace();
             System.out.println("\n\nError in constructor of SQL Engine");
@@ -55,8 +60,9 @@ public class SQLEngine implements Closeable, DatabaseManager {
 
     @Override
     public void create(Contact contact) {
-        String insertSql = "INSERT INTO \"Contacts\" (\"contact_id\", \"firstName\", \"lastName\", \"primaryEmail\", \"secondaryEmail\", \"primaryPhone\", \"secondaryPhone\") " +
-                "VALUES (" + contact.getId() + ",\" " + contact.getFirstName() + "\", \"" + contact.getLastName() + "\", \"" + contact.getPrimaryEmail() + "\", \"" + contact.getSecondaryEmail() + "\", \"" + contact.getPrimaryPhone() + "\", \"" + contact.getSecondaryPhone() + "\");";
+
+        String insertSql = "INSERT INTO Contacts " + "VALUES (" + contact.getId() + ", '" + contact.getFirstName() + "', '" + contact.getLastName() + "', '" + contact.getPrimaryEmail() + "', '" + contact.getSecondaryEmail() + "', '" + contact.getPrimaryPhone() + "', '" + contact.getSecondaryPhone() + "')";
+
         try (Statement statement = connection.createStatement()) {
             statement.executeUpdate(insertSql);
         } catch (SQLException e) {
@@ -65,39 +71,28 @@ public class SQLEngine implements Closeable, DatabaseManager {
         }
     }
 
-    @Override
-    public Contact read(int id) throws IOException {
-        return null;
-    }
 
     @Override
     public void update(Contact contact, int id) throws SQLException {
         String updateSql =
-                "UPDATE \"Contacts\" " +
-                        "SET \"firstName\" =  ?" +
-                        "SET \"lastName\" = ?" +
-                        "SET \"primaryEmail\" = ?" +
-                        "SET \"secondaryEmail\" = ?" +
-                        "SET \"primaryPhone\" = ?" +
-                        "SET \"secondaryPhone\" = ?" +
-                        "WHERE contact_id = ?";
-        try (PreparedStatement statement = connection.prepareStatement(updateSql)) {
-            statement.setString(1, contact.getFirstName());
-            statement.setString(2, contact.getLastName());
-            statement.setString(3, contact.getPrimaryEmail());
-            statement.setString(4, contact.getSecondaryEmail());
-            statement.setString(5, contact.getPrimaryPhone());
-            statement.setString(6, contact.getSecondaryPhone());
-            statement.setInt(7, id);
-            statement.execute();
+                "UPDATE Contacts " +
+                        "SET firstName =  '" + contact.getFirstName() +
+                        "', lastName = '" + contact.getLastName() +
+                        "', primaryEmail = '" + contact.getPrimaryEmail() +
+                        "', secondaryEmail = '" + contact.getSecondaryEmail() +
+                        "', primaryPhone = '" + contact.getPrimaryPhone() +
+                        "', secondaryPhone = '" + contact.getSecondaryPhone() +
+                        "' WHERE contact_id = " + id + ";";
+        try (Statement statement = connection.createStatement()) {
+            statement.executeUpdate(updateSql);
         }
     }
 
     @Override
-    public void delete(int id)  {
-        String deleteSql = "DELETE FROM \"Contacts\" WHERE \"contact_id\" = " + id + ";";
+    public void delete(int id) {
+        String deleteSql = "DELETE FROM Contacts WHERE contact_id = " + id + ";";
         try (Statement statement = connection.createStatement()) {
-            statement.executeQuery(deleteSql);
+            statement.executeUpdate(deleteSql);
         } catch (SQLException e) {
             e.printStackTrace();
             System.out.println("Deleting is not working");
@@ -105,22 +100,59 @@ public class SQLEngine implements Closeable, DatabaseManager {
     }
 
     @Override
-    public int getNextId() throws SQLException {
+    public Contact read(int id) throws SQLException {
 
+        Statement statement = connection.createStatement();
+        ResultSet resultSet = statement.executeQuery("SELECT * FROM Contacts WHERE contact_id = " + id + ";");
+
+        Contact contact = null;
+        if (resultSet != null) {
+            while (resultSet.next()) {
+                int newId = resultSet.getInt("contact_id");
+                String name = resultSet.getString("firstName");
+                String lastName = resultSet.getString("lastName");
+                String primaryEmail = resultSet.getString("primaryEmail");
+                String secondaryEmail = resultSet.getString("secondaryEmail");
+                String primaryPhone = resultSet.getString("primaryPhone");
+                String secondaryPhone = resultSet.getString("secondaryPhone");
+
+                contact = new Contact(name, lastName, primaryEmail, secondaryEmail, primaryPhone, secondaryPhone);
+            }
+        }
+
+        return contact;
+    }
+
+    @Override
+    public int getNextId() throws SQLException {
         Statement statement = connection.createStatement();
         ResultSet resultSet = statement.executeQuery("SELECT MAX(contact_id) as max_id FROM \"Contacts\";");
 
-        if (resultSet != null){
-            while (resultSet.next()){
-                return resultSet.getInt("max_id");
+        int result = 0;
+        if (resultSet != null) {
+            while (resultSet.next()) {
+                result = resultSet.getInt("max_id");
             }
         }
-        return -1;
+        return result;
     }
 
     @Override
     public void setNextId(int nextId) {
+        this.nextId = nextId;
+    }
 
+    public int loadSize() throws SQLException {
+        Statement statement = connection.createStatement();
+        ResultSet resultSet = statement.executeQuery("SELECT COUNT(*) as total_size FROM \"Contacts\";");
+
+        int result = 0;
+        if (resultSet != null) {
+            while (resultSet.next()) {
+                result = resultSet.getInt("total_size");
+            }
+        }
+        return result;
     }
 
     @Override

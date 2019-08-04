@@ -13,7 +13,7 @@ public class RandomAccessEngine implements DatabaseManager {
         try {
             file = new RandomAccessFile(filePath, "rw");
             database = new RandomAccessFile("serialized/database.db", "rw");
-            nextId = loadId();
+            nextId = getNextId();
             size = loadSize();
         } catch (IOException e) {
             e.printStackTrace();
@@ -27,18 +27,6 @@ public class RandomAccessEngine implements DatabaseManager {
         FileWriter writer = new FileWriter(file);
         writer.write("" + (nextId + 1));
         writer.close();
-    }
-
-    private int loadId() throws IOException {
-        File file = new File("nextid.txt");
-        BufferedReader reader = new BufferedReader(new FileReader(file));
-        String text;
-        int nextId = 0;
-        while ((text = reader.readLine()) != null) {
-            nextId = Integer.parseInt(text);
-        }
-        reader.close();
-        return nextId;
     }
 
     public int loadSize() throws IOException {
@@ -63,7 +51,15 @@ public class RandomAccessEngine implements DatabaseManager {
 
     @Override
     public int getNextId() throws IOException {
-        return loadId();
+        File file = new File("nextid.txt");
+        BufferedReader reader = new BufferedReader(new FileReader(file));
+        String text;
+        int nextId = 0;
+        while ((text = reader.readLine()) != null) {
+            nextId = Integer.parseInt(text);
+        }
+        reader.close();
+        return nextId;
     }
 
     public void setNextId(int nextId) {

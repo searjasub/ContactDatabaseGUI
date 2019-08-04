@@ -6,6 +6,7 @@ import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.sql.SQLException;
 
 public class AddStageController {
 
@@ -30,7 +31,7 @@ public class AddStageController {
         controller = mainStageController;
     }
 
-    public void onActionAdd() throws IOException {
+    public void onActionAdd() throws IOException, SQLException {
         String firstName = firstNameField.getText();
         String lastName = lastNameField.getText();
         String primaryEmail = primaryEmailField.getText();
@@ -39,13 +40,11 @@ public class AddStageController {
         String secondaryPhone = secondaryPhoneField.getText();
 
         Contact contact = new Contact(firstName, lastName, primaryEmail, secondaryEmail, primaryPhone, secondaryPhone);
-        contact.setId(dm.getNextId());
-        dm.setNextId(dm.getNextId());
-        dm.saveId();
+        contact.setId(dm.getNextId() + 1);
 
         data.add(contact);
+        dm.create(contact);
         controller.setPrimaryStage(primaryStage, tableScene);
-        dm.update(contact, contact.getId());
         primaryStage.setScene(tableScene);
     }
 

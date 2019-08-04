@@ -7,7 +7,7 @@ public interface DatabaseManager {
 
     void create(Contact contact) throws IOException;
 
-    Contact read(int id) throws IOException;
+    Contact read(int id) throws IOException, SQLException;
 
     void update(Contact contact, int id) throws IOException, SQLException;
 
@@ -18,5 +18,7 @@ public interface DatabaseManager {
     void setNextId(int nextId);
 
     void saveId() throws IOException;
+
+    int loadSize() throws SQLException, IOException;
 
 }

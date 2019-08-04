@@ -4,7 +4,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -23,8 +22,6 @@ import java.sql.SQLException;
 
 public class MainStageController {
 
-    private DatabaseManager<Contact> dm = new RandomAccessEngine("serialized/database.db");
-
     public Pagination pagination;
     public Button addButton;
     public Button deleteButton;
@@ -33,6 +30,7 @@ public class MainStageController {
     public CheckBox exactMatch = new CheckBox();
     public CheckBox byCharacter = new CheckBox();
     public MenuBar menu;
+    private DatabaseManager dm = new RandomAccessEngine("serialized/database.db");
     private TableColumn<Contact, String> firstNameCol;
     private TableColumn<Contact, String> lastNameCol;
     private TableColumn<Contact, String> primaryEmailCol;
@@ -78,7 +76,7 @@ public class MainStageController {
                         exactMatch.setSelected(false);
                     }
 
-                    if (byCharacter.isSelected()){
+                    if (byCharacter.isSelected()) {
                         if (newValue == null || newValue.isEmpty()) {
                             return true;
                         }
@@ -92,7 +90,7 @@ public class MainStageController {
                         } else if (contact.getPrimaryPhone().toLowerCase().contains(lowerCaseFilter)) {
                             return true;
                         }
-                    } else if(exactMatch.isSelected()){
+                    } else if (exactMatch.isSelected()) {
                         if (newValue == null || newValue.isEmpty()) {
                             return true;
                         }
@@ -146,23 +144,81 @@ public class MainStageController {
         menu.getMenus().add(menuOptions);
 
         sqlMenuOption.setOnAction(event -> {
+            sqlMenuOption.setSelected(true);
             dm = new SQLEngine();
+            tableView.getItems().removeAll(data);
+            tableView.refresh();
+            try {
+                data = null;
+                data = createSqlData();
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.out.println("IOexception");
+            } catch (SQLException e) {
+                e.printStackTrace();
+                System.out.println("SQL not working");
+            }
 
+            tableView.getItems().addAll(data);
         });
 
         mariaMenuOption.setOnAction(event -> {
+            mariaMenuOption.setSelected(true);
             dm = new MariaDBEngine();
+            tableView.getItems().removeAll(data);
+            tableView.refresh();
+            data = null;
+            try {
+                data = createSqlData();
+            } catch (IOException | SQLException e){
+                e.printStackTrace();
+            }
+
+            tableView.getItems().addAll(data);
         });
 
         localMenuOption.setOnAction(event -> {
+            localMenuOption.setSelected(true);
             dm = new RandomAccessEngine("serialized/database.db");
+            tableView.getItems().removeAll(data);
+            tableView.refresh();
+            data = null;
+            try {
+                data = createData();
+            } catch (IOException | SQLException e) {
+                e.printStackTrace();
+            }
+
+            tableView.getItems().addAll(data);
         });
+    }
 
 
+    private ObservableList<Contact> createSqlData() throws IOException, SQLException {
+        ObservableList<Contact> data = FXCollections.observableArrayList();
+
+        for (int i = 1; i <= dm.loadSize() + 1; i++) {
+            Contact contact = null;
+            try {
+                contact = dm.read(i);
+                if (contact == null){
+                    continue;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.out.println("Couldn't lookup a Contact");
+            }
+            if (!contact.getSecondaryEmail().equals("")) {
+                contact.setId(i);
+                data.add(contact);
+            }
+        }
+        return data;
     }
 
     private ObservableList<Contact> createData() throws IOException, SQLException {
         ObservableList<Contact> data = FXCollections.observableArrayList();
+
         for (int i = 0; i < dm.getNextId(); i++) {
             Contact contact = null;
             try {
@@ -224,7 +280,7 @@ public class MainStageController {
                         dm.update(contact, tableView.getSelectionModel().getSelectedItem().getId());
                     } catch (IOException e) {
                         e.printStackTrace();
-                    }catch (SQLException e) {
+                    } catch (SQLException e) {
                         e.printStackTrace();
                         System.out.println("Error on SQL Engine");
                     }
@@ -247,7 +303,7 @@ public class MainStageController {
                         dm.update(contact, tableView.getSelectionModel().getSelectedItem().getId());
                     } catch (IOException e) {
                         e.printStackTrace();
-                    }catch (SQLException e) {
+                    } catch (SQLException e) {
                         e.printStackTrace();
                         System.out.println("Error on SQL Engine");
                     }
@@ -270,7 +326,7 @@ public class MainStageController {
                         dm.update(contact, tableView.getSelectionModel().getSelectedItem().getId());
                     } catch (IOException e) {
                         e.printStackTrace();
-                    }catch (SQLException e) {
+                    } catch (SQLException e) {
                         e.printStackTrace();
                         System.out.println("Error on SQL Engine");
                     }
@@ -293,7 +349,7 @@ public class MainStageController {
                         dm.update(contact, tableView.getSelectionModel().getSelectedItem().getId());
                     } catch (IOException e) {
                         e.printStackTrace();
-                    }catch (SQLException e) {
+                    } catch (SQLException e) {
                         e.printStackTrace();
                         System.out.println("Error on SQL Engine");
                     }
@@ -325,7 +381,7 @@ public class MainStageController {
                             dm.update(contact, tableView.getSelectionModel().getSelectedItem().getId());
                         } catch (IOException e) {
                             e.printStackTrace();
-                        }catch (SQLException e) {
+                        } catch (SQLException e) {
                             e.printStackTrace();
                             System.out.println("Error on SQL Engine");
                         }
@@ -365,7 +421,7 @@ public class MainStageController {
         tableView.getItems().remove(selectedContact);
         dm.delete(selectedContact.getId());
         data = null;
-        data = createData();
+        data = createSqlData();
         tableView.refresh();
     }
 
