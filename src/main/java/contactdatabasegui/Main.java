@@ -28,7 +28,7 @@ public class Main extends Application {
             scene.getStylesheets().add(getClass().getResource("/application.css").toExternalForm());
 
             c.setPrimaryStage(primaryStage, scene);
-            primaryStage.setTitle("Contact Database");
+            primaryStage.setTitle("Contact Database - Random Access File Engine");
             primaryStage.setScene(scene);
             primaryStage.setMinWidth(900);
             primaryStage.setMinHeight(700);

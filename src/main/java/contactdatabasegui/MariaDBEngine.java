@@ -9,12 +9,12 @@ public class MariaDBEngine implements DatabaseManager, Closeable {
 
     private Connection connection;
     private int nextId;
-    private int size = 0;
+    private int size;
 
     public MariaDBEngine() {
 
         try {
-            connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/contactdatabasegui",
+            connection = DriverManager.getConnection("jdbc:mariadb://localhost/contactdatabasegui",
                     "root", "Aa12345x");
             size = loadSize();
             nextId = getNextId();
@@ -142,7 +142,15 @@ public class MariaDBEngine implements DatabaseManager, Closeable {
 
     public int loadSize() throws SQLException {
         Statement statement = connection.createStatement();
-        return statement.executeUpdate("SELECT COUNT(*) as `total_size` FROM `contacts`;");
+        ResultSet resultSet = statement.executeQuery("SELECT COUNT(*) as `total_size` FROM `contacts`;");
+
+        int result = 0;
+        if (resultSet != null) {
+            while (resultSet.next()) {
+                result = resultSet.getInt("total_size");
+            }
+        }
+        return result;
     }
 
     @Override

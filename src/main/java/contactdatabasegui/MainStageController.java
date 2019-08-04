@@ -4,6 +4,8 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -42,6 +44,7 @@ public class MainStageController {
     private RadioMenuItem localMenuOption;
     private TableView<Contact> tableView = createTable();
     private ObservableList<Contact> data = createData();
+    private FilteredList<Contact> filteredData;
     private Stage primaryStage;
     private Scene primaryScene;
 
@@ -64,8 +67,7 @@ public class MainStageController {
         aboveTableView.setAlignment(Pos.BOTTOM_CENTER);
         aboveTableView.getChildren().add(2, searchField);
 
-        FilteredList<Contact> filteredData = new FilteredList<>(data, c -> true);
-
+        filteredData = new FilteredList<>(data, c -> true);
 
         searchField.setOnKeyReleased(e -> {
             searchField.textProperty().addListener((observableValue, oldValue, newValue) -> {
@@ -108,6 +110,7 @@ public class MainStageController {
                     return false;
                 });
             });
+
             SortedList<Contact> sortedData = new SortedList<>(filteredData);
             sortedData.comparatorProperty().bind(tableView.comparatorProperty());
             tableView.setItems(sortedData);
@@ -141,7 +144,21 @@ public class MainStageController {
         menuOptions.getItems().add(localMenuOption);
 
         localMenuOption.setSelected(true);
+
+        Menu about = new Menu("About");
+        MenuItem info = new MenuItem("Info");
+        info.setOnAction(event -> {
+            Alert alert = new Alert(
+                    Alert.AlertType.INFORMATION,
+                    "Made by Searjasub Lopez for CSC180",
+                    ButtonType.OK);
+            alert.setTitle("About");
+            alert.show();
+        });
+        about.getItems().add(info);
+
         menu.getMenus().add(menuOptions);
+        menu.getMenus().add(about);
 
         sqlMenuOption.setOnAction(event -> {
             sqlMenuOption.setSelected(true);
@@ -160,6 +177,9 @@ public class MainStageController {
             }
 
             tableView.getItems().addAll(data);
+            primaryStage.setTitle("Contact Database - SQL Engine");
+
+            refreshPaginationAndFilteredData();
         });
 
         mariaMenuOption.setOnAction(event -> {
@@ -175,6 +195,9 @@ public class MainStageController {
             }
 
             tableView.getItems().addAll(data);
+            primaryStage.setTitle("Contact Database - MariaDB Engine");
+
+            refreshPaginationAndFilteredData();
         });
 
         localMenuOption.setOnAction(event -> {
@@ -190,9 +213,22 @@ public class MainStageController {
             }
 
             tableView.getItems().addAll(data);
+            primaryStage.setTitle("Contact Database - Random Access File Engine");
+
+            refreshPaginationAndFilteredData();
         });
     }
 
+    private void refreshPaginationAndFilteredData() {
+        filteredData = new FilteredList<>(data, c -> true);
+
+        if (data.size() > 100) {
+            pagination.setPageCount((data.size() / 100) + 1);
+        } else {
+            pagination.setPageCount(1);
+        }
+        pagination.setPageFactory(this::createPage);
+    }
 
     private ObservableList<Contact> createSqlData() throws IOException, SQLException {
         ObservableList<Contact> data = FXCollections.observableArrayList();
@@ -405,15 +441,6 @@ public class MainStageController {
         tableView.setItems(FXCollections.observableArrayList(data.subList(fromIndex, toIndex)));
         return tableView;
     }
-
-//    public void onMenuItemAbout() {
-//        Alert alert = new Alert(
-//                Alert.AlertType.INFORMATION,
-//                "Made by Searjasub Lopez for CSC180",
-//                ButtonType.OK);
-//        alert.setTitle("About");
-//        alert.show();
-//    }
 
     public void onActionDelete() throws IOException, SQLException {
         Contact selectedContact = tableView.getSelectionModel().getSelectedItem();
