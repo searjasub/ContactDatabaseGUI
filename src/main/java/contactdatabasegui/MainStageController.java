@@ -4,8 +4,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -21,32 +19,30 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 
 public class MainStageController {
 
     public Pagination pagination;
     public Button addButton;
     public Button deleteButton;
-    public TextField searchField;
     public HBox aboveTableView;
-    public CheckBox exactMatch = new CheckBox();
-    public CheckBox byCharacter = new CheckBox();
+    public RadioButton exactMatch = new RadioButton();
+    public RadioButton byCharacter = new RadioButton();
     public MenuBar menu;
     private DatabaseManager dm = new RandomAccessEngine("serialized/database.db");
-    private TableColumn<Contact, String> firstNameCol;
-    private TableColumn<Contact, String> lastNameCol;
-    private TableColumn<Contact, String> primaryEmailCol;
-    private TableColumn<Contact, String> secondaryEmailCol;
-    private TableColumn<Contact, String> primaryPhoneCol;
-    private TableColumn<Contact, String> secondaryPhoneCol;
+    private TextField searchField;
     private RadioMenuItem sqlMenuOption;
     private RadioMenuItem mariaMenuOption;
     private RadioMenuItem localMenuOption;
-    private TableView<Contact> tableView = createTable();
     private ObservableList<Contact> data = createData();
     private FilteredList<Contact> filteredData;
     private Stage primaryStage;
     private Scene primaryScene;
+    private TableView<Contact> tableView = createTable();
 
     public MainStageController() throws IOException, SQLException {
     }
@@ -69,52 +65,46 @@ public class MainStageController {
 
         filteredData = new FilteredList<>(data, c -> true);
 
+        ToggleGroup toggleRadio = new ToggleGroup();
+        toggleRadio.getToggles().add(byCharacter);
+        toggleRadio.getToggles().add(exactMatch);
+
         searchField.setOnKeyReleased(e -> {
-            searchField.textProperty().addListener((observableValue, oldValue, newValue) -> {
-                filteredData.setPredicate(contact -> {
+            searchField.textProperty().addListener((observableValue, oldValue, newValue) -> filteredData.setPredicate(contact -> {
 
-                    if (exactMatch.isSelected() && byCharacter.isSelected()) {
-                        byCharacter.setSelected(true);
-                        exactMatch.setSelected(false);
+                if (byCharacter.isSelected()) {
+                    if (newValue == null || newValue.isEmpty()) {
+                        return true;
                     }
-
-                    if (byCharacter.isSelected()) {
-                        if (newValue == null || newValue.isEmpty()) {
-                            return true;
-                        }
-                        String lowerCaseFilter = newValue.toLowerCase();
-                        if (contact.getFirstName().toLowerCase().contains(lowerCaseFilter)) {
-                            return true;
-                        } else if (contact.getLastName().toLowerCase().contains(lowerCaseFilter)) {
-                            return true;
-                        } else if (contact.getPrimaryEmail().toLowerCase().contains(lowerCaseFilter)) {
-                            return true;
-                        } else if (contact.getPrimaryPhone().toLowerCase().contains(lowerCaseFilter)) {
-                            return true;
-                        }
-                    } else if (exactMatch.isSelected()) {
-                        if (newValue == null || newValue.isEmpty()) {
-                            return true;
-                        }
-                        String lowerCaseFilter = newValue.toLowerCase();
-                        if (contact.getFirstName().toLowerCase().equals(lowerCaseFilter)) {
-                            return true;
-                        } else if (contact.getLastName().toLowerCase().equals(lowerCaseFilter)) {
-                            return true;
-                        } else if (contact.getPrimaryEmail().toLowerCase().equals(lowerCaseFilter)) {
-                            return true;
-                        } else if (contact.getPrimaryPhone().toLowerCase().equals(lowerCaseFilter)) {
-                            return true;
-                        }
+                    String lowerCaseFilter = newValue.toLowerCase();
+                    if (contact.getFirstName().toLowerCase().contains(lowerCaseFilter)) {
+                        return true;
+                    } else if (contact.getLastName().toLowerCase().contains(lowerCaseFilter)) {
+                        return true;
+                    } else if (contact.getPrimaryEmail().toLowerCase().contains(lowerCaseFilter)) {
+                        return true;
+                    } else return contact.getPrimaryPhone().toLowerCase().contains(lowerCaseFilter);
+                } else if (exactMatch.isSelected()) {
+                    if (newValue == null || newValue.isEmpty()) {
+                        return true;
                     }
-                    return false;
-                });
-            });
+                    String lowerCaseFilter = newValue.toLowerCase();
+                    if (contact.getFirstName().toLowerCase().equals(lowerCaseFilter)) {
+                        return true;
+                    } else if (contact.getLastName().toLowerCase().equals(lowerCaseFilter)) {
+                        return true;
+                    } else if (contact.getPrimaryEmail().toLowerCase().equals(lowerCaseFilter)) {
+                        return true;
+                    } else return contact.getPrimaryPhone().toLowerCase().equals(lowerCaseFilter);
+                }
+                return false;
+            }));
 
             SortedList<Contact> sortedData = new SortedList<>(filteredData);
             sortedData.comparatorProperty().bind(tableView.comparatorProperty());
             tableView.setItems(sortedData);
             if (sortedData.size() > 100) {
+
                 pagination.setPageCount((sortedData.size() / 100) + 1);
             } else {
                 pagination.setPageCount(1);
@@ -126,6 +116,7 @@ public class MainStageController {
         } else {
             pagination.setPageCount(1);
         }
+
         pagination.setPageFactory(this::createPage);
 
         Menu menuOptions = new Menu("Storage");
@@ -163,7 +154,7 @@ public class MainStageController {
         sqlMenuOption.setOnAction(event -> {
             sqlMenuOption.setSelected(true);
             dm = new SQLEngine();
-            tableView.getItems().removeAll(data);
+            tableView.getItems().removeAll(filteredData);
             tableView.refresh();
             try {
                 data = null;
@@ -176,7 +167,7 @@ public class MainStageController {
                 System.out.println("SQL not working");
             }
 
-            tableView.getItems().addAll(data);
+            tableView.getItems().addAll(filteredData);
             primaryStage.setTitle("Contact Database - SQL Engine");
 
             refreshPaginationAndFilteredData();
@@ -185,16 +176,16 @@ public class MainStageController {
         mariaMenuOption.setOnAction(event -> {
             mariaMenuOption.setSelected(true);
             dm = new MariaDBEngine();
-            tableView.getItems().removeAll(data);
+            tableView.getItems().removeAll(filteredData);
             tableView.refresh();
             data = null;
             try {
                 data = createSqlData();
-            } catch (IOException | SQLException e){
+            } catch (IOException | SQLException e) {
                 e.printStackTrace();
             }
 
-            tableView.getItems().addAll(data);
+            tableView.getItems().addAll(filteredData);
             primaryStage.setTitle("Contact Database - MariaDB Engine");
 
             refreshPaginationAndFilteredData();
@@ -203,7 +194,7 @@ public class MainStageController {
         localMenuOption.setOnAction(event -> {
             localMenuOption.setSelected(true);
             dm = new RandomAccessEngine("serialized/database.db");
-            tableView.getItems().removeAll(data);
+            tableView.getItems().removeAll(filteredData);
             tableView.refresh();
             data = null;
             try {
@@ -212,7 +203,7 @@ public class MainStageController {
                 e.printStackTrace();
             }
 
-            tableView.getItems().addAll(data);
+            tableView.getItems().addAll(filteredData);
             primaryStage.setTitle("Contact Database - Random Access File Engine");
 
             refreshPaginationAndFilteredData();
@@ -237,13 +228,14 @@ public class MainStageController {
             Contact contact = null;
             try {
                 contact = dm.read(i);
-                if (contact == null){
+                if (contact == null) {
                     continue;
                 }
             } catch (IOException e) {
                 e.printStackTrace();
                 System.out.println("Couldn't lookup a Contact");
             }
+            assert contact != null;
             if (!contact.getSecondaryEmail().equals("")) {
                 contact.setId(i);
                 data.add(contact);
@@ -263,6 +255,7 @@ public class MainStageController {
                 e.printStackTrace();
                 System.out.println("Couldn't lookup a Contact");
             }
+            assert contact != null;
             if (!contact.getSecondaryEmail().equals("")) {
                 contact.setId(i);
                 data.add(contact);
@@ -272,12 +265,10 @@ public class MainStageController {
     }
 
     private TableView<Contact> createTable() {
-
         tableView = new TableView<>();
         tableView.setEditable(true);
 
-
-        firstNameCol = new TableColumn<>("First Name");
+        TableColumn<Contact, String> firstNameCol = new TableColumn<>("First Name");
         firstNameCol.setCellValueFactory(new PropertyValueFactory<>("firstName"));
         firstNameCol.setCellFactory(TextFieldTableCell.forTableColumn());
         firstNameCol.setOnEditCommit(
@@ -300,7 +291,7 @@ public class MainStageController {
                 }
         );
 
-        lastNameCol = new TableColumn<>("Last Name");
+        TableColumn<Contact, String> lastNameCol = new TableColumn<>("Last Name");
         lastNameCol.setCellValueFactory(new PropertyValueFactory<>("lastName"));
         lastNameCol.setCellFactory(TextFieldTableCell.forTableColumn());
         lastNameCol.setOnEditCommit(
@@ -323,7 +314,7 @@ public class MainStageController {
                 }
         );
 
-        primaryEmailCol = new TableColumn<>("Primary Email");
+        TableColumn<Contact, String> primaryEmailCol = new TableColumn<>("Primary Email");
         primaryEmailCol.setCellValueFactory(new PropertyValueFactory<>("primaryEmail"));
         primaryEmailCol.setCellFactory(TextFieldTableCell.forTableColumn());
         primaryEmailCol.setOnEditCommit(
@@ -346,7 +337,7 @@ public class MainStageController {
                 }
         );
 
-        secondaryEmailCol = new TableColumn<>("Secondary Email");
+        TableColumn<Contact, String> secondaryEmailCol = new TableColumn<>("Secondary Email");
         secondaryEmailCol.setCellValueFactory(new PropertyValueFactory<>("secondaryEmail"));
         secondaryEmailCol.setCellFactory(TextFieldTableCell.forTableColumn());
         secondaryEmailCol.setOnEditCommit(
@@ -369,36 +360,48 @@ public class MainStageController {
                 }
         );
 
-        primaryPhoneCol = new TableColumn<>("Primary Phone");
+        TableColumn<Contact, String> primaryPhoneCol = new TableColumn<>("Primary Phone");
         primaryPhoneCol.setCellValueFactory(new PropertyValueFactory<>("primaryPhone"));
         primaryPhoneCol.setCellFactory(TextFieldTableCell.forTableColumn());
         primaryPhoneCol.setOnEditCommit(
                 event -> {
-                    event
-                            .getTableView()
-                            .getItems()
-                            .get(event.getTablePosition().getRow())
-                            .setPrimaryPhone(event.getNewValue());
-                    try {
-                        Contact contact = dm.read(tableView.getSelectionModel().getSelectedItem().getId());
-                        contact.setPrimaryPhone(event.getNewValue());
-                        dm.update(contact, tableView.getSelectionModel().getSelectedItem().getId());
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                        System.out.println("Error on SQL Engine");
+
+                    String lowerCase = event.getNewValue().toLowerCase();
+                    if (event.getNewValue().length() != 10 || lowerCase.contains("[^0-9]")) {
+                        Alert alert = new Alert(Alert.AlertType.ERROR,
+                                "Please enter a valid 10 digit phone number", ButtonType.OK);
+                        alert.setTitle("Wrong Input");
+                        alert.setHeaderText("test");
+                        alert.setResizable(false);
+                        alert.show();
+                    } else {
+                        event
+                                .getTableView()
+                                .getItems()
+                                .get(event.getTablePosition().getRow())
+                                .setPrimaryPhone(event.getNewValue());
+                        try {
+                            Contact contact = dm.read(tableView.getSelectionModel().getSelectedItem().getId());
+                            contact.setPrimaryPhone(event.getNewValue());
+                            dm.update(contact, tableView.getSelectionModel().getSelectedItem().getId());
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                            System.out.println("Error on SQL Engine");
+                        }
                     }
                 }
         );
 
-        secondaryPhoneCol = new TableColumn<>("Secondary Phone");
+        TableColumn<Contact, String> secondaryPhoneCol = new TableColumn<>("Secondary Phone");
         secondaryPhoneCol.setCellValueFactory(new PropertyValueFactory<>("secondaryPhone"));
         secondaryPhoneCol.setCellFactory(TextFieldTableCell.forTableColumn());
         secondaryPhoneCol.setOnEditCommit(
                 (TableColumn.CellEditEvent<Contact, String> event) -> {
 
-                    if (event.getNewValue().length() != 10) {
+                    String lowerCase = event.getNewValue().toLowerCase();
+                    if (event.getNewValue().length() != 10 || lowerCase.contains("[^0-9]")) {
                         Alert alert = new Alert(Alert.AlertType.ERROR,
                                 "Please enter a valid 10 digit phone number", ButtonType.OK);
                         alert.setTitle("Wrong Input");

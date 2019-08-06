@@ -19,11 +19,6 @@
                         <MenuItem onAction="#onMenuItemExit" text="Exit" />
                     </items>
                 </Menu>
-<!--                <Menu text="Help">-->
-<!--                    <items>-->
-<!--                        <MenuItem onAction="#onMenuItemAbout" text="About" />-->
-<!--                    </items>-->
-<!--                </Menu>-->
             </menus>
         </MenuBar>
     </top>
@@ -32,22 +27,22 @@
             <children>
                 <HBox prefHeight="48.0" prefWidth="945.0" fx:id="aboveTableView">
                     <children>
-                        <CheckBox text="Exact Match" minWidth="150" fx:id="exactMatch">
+                        <RadioButton text="Exact Match" minWidth="150" fx:id="exactMatch">
                             <font>
                                 <Font size="13.0" />
                             </font>
                             <HBox.margin>
                                 <Insets bottom="5.0" top="20.0" left="20.0" />
                             </HBox.margin>
-                        </CheckBox>
-                        <CheckBox text="By character" minWidth="150" fx:id="byCharacter">
+                        </RadioButton>
+                        <RadioButton text="By character" minWidth="150" fx:id="byCharacter">
                             <font>
                                 <Font size="13.0" />
                             </font>
                             <HBox.margin>
                                 <Insets bottom="5.0"   top="20.0" />
                             </HBox.margin>
-                        </CheckBox>
+                        </RadioButton>
 
                         <Button fx:id="addButton" minWidth="50" mnemonicParsing="false" onAction="#onActionAdd" styleClass="add-button" text="Add">
                             <HBox.margin>
