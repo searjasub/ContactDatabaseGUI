@@ -19,10 +19,6 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 
 public class MainStageController {
 
@@ -57,7 +53,7 @@ public class MainStageController {
         searchField = new TextField();
         searchField.setFont(Font.font("SanSerif"));
         searchField.setPadding(new Insets(5, 10, 5, 10));
-        searchField.setPrefSize(800, 35);
+        searchField.setPrefSize(8000000, 35);
         searchField.setPromptText("Search");
 
         aboveTableView.setAlignment(Pos.BOTTOM_CENTER);
